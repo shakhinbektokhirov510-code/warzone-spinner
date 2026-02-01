@@ -1,35 +1,125 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Warzone Drop Spinner</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&display=swap" rel="stylesheet">
     <style>
-        body { background: #1a1a1a; color: white; text-align: center; font-family: sans-serif; padding: 20px; }
-        #spinner-box { width: 300px; height: 300px; border: 5px solid #00ff00; border-radius: 50%; margin: 20px auto; position: relative; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; overflow: hidden; background: #333; }
-        button { background: #00ff00; color: black; border: none; padding: 15px 30px; font-size: 20px; font-weight: bold; border-radius: 10px; cursor: pointer; }
-        button:active { transform: scale(0.95); }
+        body { background: #0b0c0b; color: #d4d4d4; font-family: 'Black Ops One', cursive; text-align: center; margin: 0; overflow: hidden; }
+        .hud { padding: 15px; border-bottom: 2px solid #2d332d; display: flex; justify-content: space-around; background: #1a1d1a; box-shadow: 0 4px 10px #000; }
+        #money { color: #4efd4e; font-size: 24px; text-shadow: 0 0 10px #00ff00; }
+        
+        /* The Slot Machine Reel */
+        .slot-container { 
+            position: relative; width: 150px; height: 150px; 
+            margin: 30px auto; border: 4px solid #3e443e; 
+            background: #000; overflow: hidden; 
+            box-shadow: 0 0 20px #4efd4e44;
+        }
+        .reel { 
+            display: flex; flex-direction: column; 
+            position: absolute; top: 0; width: 100%;
+            transition: top 3s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+        }
+        .operator-card { 
+            height: 150px; width: 100%; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-bottom: 1px solid #222;
+        }
+        .operator-card img { width: 80px; filter: drop-shadow(0 0 5px #fff); }
+        .win-line { 
+            position: absolute; top: 50%; left: 0; right: 0; 
+            height: 2px; background: red; z-index: 10; transform: translateY(-50%);
+            box-shadow: 0 0 10px red; pointer-events: none;
+        }
+
+        /* Tapper Area */
+        .main-op { margin-top: 20px; transition: transform 0.1s; cursor: pointer; }
+        .main-op:active { transform: scale(0.9); }
+        .main-op img { width: 180px; filter: drop-shadow(0 0 15px #4efd4e); }
+
+        button { 
+            background: #4efd4e; color: #000; border: none; 
+            padding: 12px 30px; font-family: 'Black Ops One'; 
+            font-size: 18px; margin-top: 10px; cursor: pointer;
+            box-shadow: 0 4px 0 #2a8a2a;
+        }
+        button:active { transform: translateY(4px); box-shadow: none; }
     </style>
 </head>
 <body>
-    <h1>WARZONE DROP SPINNER</h1>
-    <div id="spinner-box">?</div>
-    <button onclick="spin()">SPIN THE WHEEL</button>
+    <div class="hud">
+        <div>CASH: <span id="money">$500</span></div>
+        <div>LVL: <span id="lvl">1</span></div>
+    </div>
+
+    <div class="slot-container">
+        <div class="win-line"></div>
+        <div id="reel" class="reel"></div>
+    </div>
+    <button onclick="spin()">DEPLOY CRATE ($100)</button>
+
+    <div style="margin-top:20px; color:#666; font-size:12px;">TAP TO EARN</div>
+    <div class="main-op" onclick="tap()">
+        <img id="active-op" src="https://img.icons8.com/color/200/soldier.png">
+    </div>
 
     <script>
-        const spots = ["Superstore", "Military Base", "Storage Town", "Prison", "Hospital", "Airport", "Promenade"];
-        function spin() {
-            const box = document.getElementById('spinner-box');
-            box.style.color = "#00ff00";
-            box.innerText = "SPINNING...";
-            setTimeout(() => {
-                const randomSpot = spots[Math.floor(Math.random() * spots.length)];
-                box.innerText = randomSpot;
-                box.style.color = "white";
-            }, 800);
+        let cash = 500;
+        let power = 1;
+        const reel = document.getElementById('reel');
+        const ops = [
+            {n: "Recruit", m: 1, i: "https://img.icons8.com/color/200/soldier.png"},
+            {n: "Ghost", m: 10, i: "https://img.icons8.com/color/200/ninja.png"},
+            {n: "Price", m: 50, i: "https://img.icons8.com/color/200/general.png"},
+            {n: "Soap", m: 100, i: "https://img.icons8.com/color/200/boxer.png"}
+        ];
+
+        // Build a massive vertical list for the loop
+        function initReel() {
+            reel.innerHTML = '';
+            for(let i=0; i<50; i++) {
+                let op = ops[Math.floor(Math.random()*ops.length)];
+                let div = document.createElement('div');
+                div.className = 'operator-card';
+                div.innerHTML = `<img src="${op.i}"><div style="font-size:10px">${op.n}</div>`;
+                reel.appendChild(div);
+            }
         }
-        // Tells Telegram the app is ready
-        window.Telegram.WebApp.ready();
+
+        function spin() {
+            if(cash < 100) return alert("INSUFFICIENT FUNDS");
+            cash -= 100;
+            updateUI();
+            
+            initReel();
+            reel.style.transition = 'none';
+            reel.style.top = '0px';
+            
+            setTimeout(() => {
+                reel.style.transition = 'top 3s cubic-bezier(0.1, 0, 0.1, 1)';
+                // Spin to a specific "Winning" index (the 45th item)
+                const winIndex = 45;
+                const winner = ops[Math.floor(Math.random()*ops.length)];
+                
+                // Force the 45th card to be our winner
+                reel.children[winIndex].innerHTML = `<img src="${winner.i}"><div>${winner.n}</div>`;
+                
+                const stopPos = -(winIndex * 150);
+                reel.style.top = stopPos + 'px';
+
+                setTimeout(() => {
+                    alert(`NEW OPERATOR RECRUITED: ${winner.n}`);
+                    document.getElementById('active-op').src = winner.i;
+                    power = winner.m;
+                    updateUI();
+                }, 3100);
+            }, 50);
+        }
+
+        function tap() { cash += power; updateUI(); }
+        function updateUI() { document.getElementById('money').innerText = "$" + cash; }
+        initReel();
     </script>
 </body>
 </html>
+
