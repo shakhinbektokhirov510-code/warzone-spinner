@@ -5,121 +5,69 @@
     <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&display=swap" rel="stylesheet">
     <style>
         body { background: #0b0c0b; color: #d4d4d4; font-family: 'Black Ops One', cursive; text-align: center; margin: 0; overflow: hidden; }
-        .hud { padding: 15px; border-bottom: 2px solid #2d332d; display: flex; justify-content: space-around; background: #1a1d1a; box-shadow: 0 4px 10px #000; }
+        .hud { padding: 15px; border-bottom: 2px solid #2d332d; display: flex; justify-content: space-around; background: #1a1d1a; }
         #money { color: #4efd4e; font-size: 24px; text-shadow: 0 0 10px #00ff00; }
-        
-        /* The Slot Machine Reel */
-        .slot-container { 
-            position: relative; width: 150px; height: 150px; 
-            margin: 30px auto; border: 4px solid #3e443e; 
-            background: #000; overflow: hidden; 
-            box-shadow: 0 0 20px #4efd4e44;
-        }
-        .reel { 
-            display: flex; flex-direction: column; 
-            position: absolute; top: 0; width: 100%;
-            transition: top 3s cubic-bezier(0.45, 0.05, 0.55, 0.95);
-        }
-        .operator-card { 
-            height: 150px; width: 100%; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            border-bottom: 1px solid #222;
-        }
-        .operator-card img { width: 80px; filter: drop-shadow(0 0 5px #fff); }
-        .win-line { 
-            position: absolute; top: 50%; left: 0; right: 0; 
-            height: 2px; background: red; z-index: 10; transform: translateY(-50%);
-            box-shadow: 0 0 10px red; pointer-events: none;
-        }
-
-        /* Tapper Area */
-        .main-op { margin-top: 20px; transition: transform 0.1s; cursor: pointer; }
-        .main-op:active { transform: scale(0.9); }
-        .main-op img { width: 180px; filter: drop-shadow(0 0 15px #4efd4e); }
-
-        button { 
-            background: #4efd4e; color: #000; border: none; 
-            padding: 12px 30px; font-family: 'Black Ops One'; 
-            font-size: 18px; margin-top: 10px; cursor: pointer;
-            box-shadow: 0 4px 0 #2a8a2a;
-        }
-        button:active { transform: translateY(4px); box-shadow: none; }
+        .slot-container { position: relative; width: 160px; height: 160px; margin: 20px auto; border: 4px solid #3e443e; background: #000; overflow: hidden; }
+        .reel { display: flex; flex-direction: column; position: absolute; top: 0; width: 100%; transition: top 3s cubic-bezier(0.1, 0, 0.1, 1); }
+        .op-card { height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-bottom: 2px solid #111; }
+        .op-card img { width: 90px; }
+        .win-line { position: absolute; top: 50%; width: 100%; height: 2px; background: red; z-index: 10; box-shadow: 0 0 10px red; }
+        .main-op img { width: 200px; filter: drop-shadow(0 0 15px #4efd4e); cursor: pointer; transition: 0.1s; }
+        .main-op img:active { transform: scale(0.9); }
+        button { background: #4efd4e; color: #000; border: none; padding: 15px 30px; font-family: 'Black Ops One'; font-size: 18px; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div class="hud">
         <div>CASH: <span id="money">$500</span></div>
-        <div>LVL: <span id="lvl">1</span></div>
+        <div>DMG: <span id="dmg">x1</span></div>
     </div>
-
     <div class="slot-container">
         <div class="win-line"></div>
         <div id="reel" class="reel"></div>
     </div>
-    <button onclick="spin()">DEPLOY CRATE ($100)</button>
-
-    <div style="margin-top:20px; color:#666; font-size:12px;">TAP TO EARN</div>
+    <button onclick="spin()">SPIN FOR OPERATOR ($100)</button>
     <div class="main-op" onclick="tap()">
         <img id="active-op" src="https://img.icons8.com/color/200/soldier.png">
     </div>
-
     <script>
-        let cash = 500;
-        let power = 1;
-        const reel = document.getElementById('reel');
+        let cash = 500; let power = 1;
         const ops = [
-            {n: "Recruit", m: 1, i: "https://img.icons8.com/color/200/soldier.png"},
-            {n: "Ghost", m: 10, i: "https://img.icons8.com/color/200/ninja.png"},
-            {n: "Price", m: 50, i: "https://img.icons8.com/color/200/general.png"},
-            {n: "Soap", m: 100, i: "https://img.icons8.com/color/200/boxer.png"}
+            {n:"RECRUIT", m:1, i:"https://img.icons8.com/color/200/soldier.png"},
+            {n:"GHOST", m:10, i:"https://img.icons8.com/color/200/ninja.png"},
+            {n:"PRICE", m:50, i:"https://img.icons8.com/color/200/general.png"}
         ];
-
-        // Build a massive vertical list for the loop
-        function initReel() {
+        function init() {
+            const reel = document.getElementById('reel');
             reel.innerHTML = '';
-            for(let i=0; i<50; i++) {
-                let op = ops[Math.floor(Math.random()*ops.length)];
-                let div = document.createElement('div');
-                div.className = 'operator-card';
-                div.innerHTML = `<img src="${op.i}"><div style="font-size:10px">${op.n}</div>`;
-                reel.appendChild(div);
+            for(let i=0; i<30; i++) {
+                let o = ops[Math.floor(Math.random()*ops.length)];
+                reel.innerHTML += `<div class="op-card"><img src="${o.i}"></div>`;
             }
         }
-
         function spin() {
-            if(cash < 100) return alert("INSUFFICIENT FUNDS");
-            cash -= 100;
-            updateUI();
-            
-            initReel();
-            reel.style.transition = 'none';
-            reel.style.top = '0px';
-            
+            if(cash < 100) return alert("GET MORE CASH!");
+            cash -= 100; update();
+            init();
+            const reel = document.getElementById('reel');
+            reel.style.transition = 'none'; reel.style.top = '0px';
             setTimeout(() => {
                 reel.style.transition = 'top 3s cubic-bezier(0.1, 0, 0.1, 1)';
-                // Spin to a specific "Winning" index (the 45th item)
-                const winIndex = 45;
-                const winner = ops[Math.floor(Math.random()*ops.length)];
-                
-                // Force the 45th card to be our winner
-                reel.children[winIndex].innerHTML = `<img src="${winner.i}"><div>${winner.n}</div>`;
-                
-                const stopPos = -(winIndex * 150);
-                reel.style.top = stopPos + 'px';
-
+                let win = ops[Math.floor(Math.random()*ops.length)];
+                reel.children[25].innerHTML = `<img src="${win.i}">`;
+                reel.style.top = '-4000px'; // Forced distance
                 setTimeout(() => {
-                    alert(`NEW OPERATOR RECRUITED: ${winner.n}`);
-                    document.getElementById('active-op').src = winner.i;
-                    power = winner.m;
-                    updateUI();
+                    document.getElementById('active-op').src = win.i;
+                    power = win.m; alert("NEW OP: " + win.n); update();
                 }, 3100);
             }, 50);
         }
-
-        function tap() { cash += power; updateUI(); }
-        function updateUI() { document.getElementById('money').innerText = "$" + cash; }
-        initReel();
+        function tap() { cash += power; update(); }
+        function update() { 
+            document.getElementById('money').innerText = "$" + cash; 
+            document.getElementById('dmg').innerText = "x" + power;
+        }
+        init();
     </script>
 </body>
 </html>
-
